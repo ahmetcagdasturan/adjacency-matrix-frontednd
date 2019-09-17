@@ -7,6 +7,7 @@ import {ReactCytoscape} from 'react-cytoscape';
 import cytoscape from 'cytoscape';
 
 
+
 export default class App extends Component{
 
   constructor(props) {
@@ -17,7 +18,9 @@ export default class App extends Component{
                   data1: null,
                   data2: "",
                   nodess: [],
-                  edgess: []
+                  edgess: [],
+                  data3: null,
+                  data4: ""
 
     };
 
@@ -107,8 +110,8 @@ componentDidMount(){
 
         this.setState({data1:response})
         var stringMatrix = ""
-        for(var i=0; i<response.length; i++){
-          for(var j=0; j<response.length; j++){
+        for(i=0; i<response.length; i++){
+          for(j=0; j<response.length; j++){
             stringMatrix += response[i][j].toString();
           }
           stringMatrix += " / ";
@@ -120,25 +123,44 @@ componentDidMount(){
 
   }
 
+  getAdjacencyList(){
+    console.log(this.state.data)
+    var denem = this.state.data;
+
+    denem.param = Number(denem.param);
+    console.log(denem)
+    Api.getAdjacencyList(denem)
+      .then( (response) => {
+        console.log(response)
+        this.setState({data3:response})
+        var stringMatrix = ""
+        for(var i=0; i<response.length; i++){
+          for(var j=0; j<response[i].length; j++){
+            stringMatrix += response[i][j].toString() + " ";
+          }
+          stringMatrix += "  /  ";
+        }
+        console.log(stringMatrix)
+        this.setState({data4:stringMatrix})
+      })
+    
+
+  }
+
   render(){
     return (
         <div className="App">
-          <header className="App-header">
+            <header className="App-header">
             
             <label>
-              Name:
+              Input:
               <textarea value={this.state.data.param} onChange={this.handleChange} />
             </label>
             <button onClick={() => {this.getAdjacencyMatrix()}}>Button</button>
-            
-            
-            
             <textarea value={this.state.data2}  />
+            <button onClick={() => {this.getAdjacencyList()}}>ButtonList</button>
+             <textarea value={this.state.data4}/>
 
-
-            
-            
-    
           </header>
           <div style={{justifyContent: 'center',
         alignItems: 'center', flex:1, height:'100%', width:'100%'}} className="node_selected">

@@ -26,7 +26,8 @@ export const getAdjacencyMatrix = function(data){
 }
 
 export const getAdjacencyList = function(data){
-    fetch(globals.URL_ADJANCENCYLIST, {
+  try {  
+    return fetch(globals.URL_ADJANCENCYLIST, {
         method: "post",
         headers: {
           'Accept': 'application/json',
@@ -36,9 +37,13 @@ export const getAdjacencyList = function(data){
       })
         .then((response) => response.json())
         .then((responseJson) => {
-            return responseJson;
+          console.log(responseJson)
+            return responseJson.AdjancencyList;
         })
         .catch((error) =>{
             return error;
         });
+  }catch(e){
+    console.log(e);
+  }
 }
