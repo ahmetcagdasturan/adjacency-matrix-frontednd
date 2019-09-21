@@ -5,7 +5,7 @@ import './App.css';
 import * as Api from './api.js';
 import {ReactCytoscape} from 'react-cytoscape';
 import cytoscape from 'cytoscape';
-
+import { Graph } from 'react-d3-graph';
 
 
 export default class App extends Component{
@@ -20,67 +20,57 @@ export default class App extends Component{
                   nodess: [],
                   edgess: [],
                   data3: null,
-                  data4: ""
+                  data4: "",
+                  myConfig: {
+                    nodeHighlightBehavior: true,
+                    node: {
+                        color: 'lightgreen',
+                        size: 120,
+                        highlightStrokeColor: 'blue'
+                    },
+                    link: {
+                        type: "STRAIGHT",
+                        highlightColor: 'lightblue'
+                    }
+                },
+                data99: {
+                  nodes: [
+                    {id: 'Harry'},
+                    {id: 'Sally'},
+                    {id: 'Alicee'}
+                  ],
+                  links: [
+                      {source: 'Harry', target: 'Sally'},
+                      {source: 'Harry', target: 'Alicee'},
+                      {source: 'Sally', target: 'Alicee'}
+                  ]
+                }
 
     };
 
     this.handleChange = this.handleChange.bind(this);
   }
 
-
-  renderCytoscapeElement(){
-
-    console.log('* Cytoscape.js is rendering the graph..');
-
-    this.cy = cytoscape(
-    {
-        container: document.getElementById('cy'),
-
-        boxSelectionEnabled: false,
-        autounselectify: true,
-
-        style: cytoscape.stylesheet()
-            .selector('node')
-            .css({
-                'height': 80,
-                'width': 80,
-                'background-fit': 'cover',
-                'border-color': '#000',
-                'border-width': 3,
-                'border-opacity': 0.5,
-                'content': 'data(name)',
-                'text-valign': 'center',
-            })
-            .selector('edge')
-            .css({
-                'width': 6,
-                'target-arrow-shape': 'triangle',
-                'line-color': '#ffaaaa',
-                'target-arrow-color': '#ffaaaa',
-                'curve-style': 'bezier'
-            })
-            ,
-        elements: {
-            nodes: this.state.nodess,
-            edges: this.state.edgess
-        },
-
-        layout: {
-          name: 'grid',
-          rows: 1
-        }
-        }); 
-}
-
-componentDidMount(){
-    //this.renderCytoscapeElement();
-}
-
-
+  componentWillMount(){
+    //this.getAdjacencyMatrix();
+  }
+  
   handleChange(event) {
     console.log(event)
     this.setState({data: {param: event.target.value}});
   }
+
+  resetNodesPositions = () => this.refs.graph.resetNodesPositions();
+  restartGraphSimulation = () => this.refs.graph.restartSimulation();
+
+  decorateGraphNodesWithInitialPositioning = nodes => {
+    return nodes.map(n =>
+        Object.assign({}, n, {
+            x: n.x || Math.floor(Math.random() * 500),
+            y: n.y || Math.floor(Math.random() * 500),
+        })
+    );
+};
 
   getAdjacencyMatrix(){
     console.log(this.state.data)
@@ -90,25 +80,35 @@ componentDidMount(){
     console.log(denem)
     Api.getAdjacencyMatrix(denem)
       .then( (response) => {
-        console.log(response)
+        var graphParams = {};
         var nodes = [];
-        var edges = [];
+        var links = [];
 
         for(var i=0; i<response.length; i++){
-          nodes.push({data: {id: i.toString()}})
+          nodes.push({id: (i+1).toString(), x: Math.floor(Math.random() * 500), y: Math.floor(Math.random() * 500)})
           for(var j=0; j<response.length; j++){
-            if(response[i][j] == 1){
-              edges.push({data: {source: i.toString(), target: j.toString()}})
+            if(response[i][j]==1){
+              var flag = true;
+              for(var t=0; t<links.length; t++){
+                if(links[t].source == (j+1).toString() && links[t].target == (i+1).toString()){
+                  flag = false;
+                }
+              }
+              if(flag){
+                links.push({source: (i+1).toString(), target: (j+1).toString()})
+              }
             }
           }
         }
-
-        this.setState({edgess: edges});
-        this.setState({nodess: nodes});
-
-        this.renderCytoscapeElement();
-
-        this.setState({data1:response})
+        graphParams.nodes = nodes;
+        graphParams.links = links;
+        console.log(graphParams)
+        //this.decorateGraphNodesWithInitialPositioning(graphParams.nodes);
+        console.log(graphParams)
+        this.setState({data99: graphParams});
+        console.log(this.refs)
+        //this.resetNodesPositions();
+        
         var stringMatrix = ""
         for(i=0; i<response.length; i++){
           for(j=0; j<response.length; j++){
@@ -116,7 +116,7 @@ componentDidMount(){
           }
           stringMatrix += " / ";
         }
-        console.log(stringMatrix)
+
         this.setState({data2:stringMatrix})
       })
     
@@ -131,8 +131,7 @@ componentDidMount(){
     console.log(denem)
     Api.getAdjacencyList(denem)
       .then( (response) => {
-        console.log(response)
-        this.setState({data3:response})
+
         var stringMatrix = ""
         for(var i=0; i<response.length; i++){
           for(var j=0; j<response[i].length; j++){
@@ -140,7 +139,7 @@ componentDidMount(){
           }
           stringMatrix += "  /  ";
         }
-        console.log(stringMatrix)
+
         this.setState({data4:stringMatrix})
       })
     
@@ -161,11 +160,15 @@ componentDidMount(){
             <button onClick={() => {this.getAdjacencyList()}}>ButtonList</button>
              <textarea value={this.state.data4}/>
 
+          <Graph
+            ref="graph"
+            id='graph-id' 
+            data={this.state.data99}
+            config={this.state.myConfig}>
+          </Graph>
+
           </header>
-          <div style={{justifyContent: 'center',
-        alignItems: 'center', flex:1, height:'100%', width:'100%'}} className="node_selected">
-                <div style={{height:'400px'}} id="cy"/>
-            </div>
+          
         </div>
     )}
   
