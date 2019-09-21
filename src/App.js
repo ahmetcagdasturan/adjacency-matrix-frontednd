@@ -1,171 +1,148 @@
 import React, {Component} from 'react';
-//import { Button , View, Text} from 'react-bootstrap';
-import logo from './logo.svg';
 import './App.css';
 import * as Api from './api.js';
-import {ReactCytoscape} from 'react-cytoscape';
-import cytoscape from 'cytoscape';
-
-
+import { Graph } from 'react-d3-graph';
 
 export default class App extends Component{
 
   constructor(props) {
     super(props);
-    this.state = {data: {
+    this.state = {request: {
                     param: null
                   },
-                  data1: null,
-                  data2: "",
-                  nodess: [],
-                  edgess: [],
-                  data3: null,
-                  data4: ""
-
+                  matrixTextArea: "",
+                  listTextArea: "",
+                  myConfig: {
+                    nodeHighlightBehavior: true,
+                    node: {
+                        fontColor: 'white',
+                        color: 'lightblue',
+                        size: 120,
+                        highlightStrokeColor: 'gray'
+                    },
+                    link: {
+                        color: "lightgreen",
+                        type: "STRAIGHT",
+                        highlightColor: 'red'
+                    }
+                  },
+                  graphProps: {
+                    nodes: [
+                      {id: '1'},
+                      {id: '2'},
+                      {id: '3'}
+                    ],
+                    links: [
+                        {source: '2', target: '1'},
+                        {source: '2', target: '3'},
+                    ]
+                  }
     };
 
     this.handleChange = this.handleChange.bind(this);
   }
-
-
-  renderCytoscapeElement(){
-
-    console.log('* Cytoscape.js is rendering the graph..');
-
-    this.cy = cytoscape(
-    {
-        container: document.getElementById('cy'),
-
-        boxSelectionEnabled: false,
-        autounselectify: true,
-
-        style: cytoscape.stylesheet()
-            .selector('node')
-            .css({
-                'height': 80,
-                'width': 80,
-                'background-fit': 'cover',
-                'border-color': '#000',
-                'border-width': 3,
-                'border-opacity': 0.5,
-                'content': 'data(name)',
-                'text-valign': 'center',
-            })
-            .selector('edge')
-            .css({
-                'width': 6,
-                'target-arrow-shape': 'triangle',
-                'line-color': '#ffaaaa',
-                'target-arrow-color': '#ffaaaa',
-                'curve-style': 'bezier'
-            })
-            ,
-        elements: {
-            nodes: this.state.nodess,
-            edges: this.state.edgess
-        },
-
-        layout: {
-          name: 'grid',
-          rows: 1
-        }
-        }); 
-}
-
-componentDidMount(){
-    //this.renderCytoscapeElement();
-}
-
-
+  
   handleChange(event) {
-    console.log(event)
-    this.setState({data: {param: event.target.value}});
+    this.setState({request: {param: event.target.value}});
+  }
+
+  setGraphParamsForMatrix(response){
+    var graphParams = {};
+    var nodes = [];
+    var links = [];
+    for(var i=0; i<response.length; i++){
+      nodes.push({id: (i+1).toString(), x: Math.floor(Math.random() * 500), y: Math.floor(Math.random() * 500)})
+      for(var j=0; j<response.length; j++){
+        if(response[i][j]==1){
+          links.push({source: (i+1).toString(), target: (j+1).toString()});
+        }
+      }
+    }
+    graphParams.nodes = nodes;
+    graphParams.links = links;
+    this.setState({graphProps: graphParams});
+  }
+
+  setGraphParamsForList(response){
+    var graphParams = {};
+    var nodes = [];
+    var links = [];
+    for(var i=0; i<response.length; i++){
+      nodes.push({id: (i+1).toString(), x: Math.floor(Math.random() * 500), y: Math.floor(Math.random() * 500)})
+      for(var j=0; j<response[i].length; j++){
+        links.push({source: (i+1).toString(), target: response[i][j].toString()});
+      }
+    }
+    graphParams.nodes = nodes;
+    graphParams.links = links;
+    this.setState({graphProps: graphParams});
   }
 
   getAdjacencyMatrix(){
-    console.log(this.state.data)
-    var denem = this.state.data;
-
-    denem.param = Number(denem.param);
-    console.log(denem)
-    Api.getAdjacencyMatrix(denem)
+    var req = this.state.request;
+    req.param = Number(req.param);
+    Api.getAdjacencyMatrix(req)
       .then( (response) => {
-        console.log(response)
-        var nodes = [];
-        var edges = [];
-
-        for(var i=0; i<response.length; i++){
-          nodes.push({data: {id: i.toString()}})
-          for(var j=0; j<response.length; j++){
-            if(response[i][j] == 1){
-              edges.push({data: {source: i.toString(), target: j.toString()}})
-            }
-          }
-        }
-
-        this.setState({edgess: edges});
-        this.setState({nodess: nodes});
-
-        this.renderCytoscapeElement();
-
-        this.setState({data1:response})
+        this.setGraphParamsForMatrix(response);
         var stringMatrix = ""
-        for(i=0; i<response.length; i++){
-          for(j=0; j<response.length; j++){
-            stringMatrix += response[i][j].toString();
+        for(var i=0; i<response.length; i++){
+          for(var j=0; j<response.length; j++){
+            stringMatrix += response[i][j].toString() + " ";
           }
-          stringMatrix += " / ";
+          stringMatrix += "\n";
         }
-        console.log(stringMatrix)
-        this.setState({data2:stringMatrix})
+        this.setState({matrixTextArea:stringMatrix})
       })
-    
-
   }
 
   getAdjacencyList(){
-    console.log(this.state.data)
-    var denem = this.state.data;
-
-    denem.param = Number(denem.param);
-    console.log(denem)
-    Api.getAdjacencyList(denem)
+    var req = this.state.request;
+    req.param = Number(req.param);
+    Api.getAdjacencyList(req)
       .then( (response) => {
-        console.log(response)
-        this.setState({data3:response})
+        this.setGraphParamsForList(response);
         var stringMatrix = ""
         for(var i=0; i<response.length; i++){
           for(var j=0; j<response[i].length; j++){
             stringMatrix += response[i][j].toString() + " ";
           }
-          stringMatrix += "  /  ";
+          stringMatrix += "\n";
         }
-        console.log(stringMatrix)
-        this.setState({data4:stringMatrix})
+        this.setState({listTextArea:stringMatrix})
       })
-    
-
   }
 
   render(){
     return (
         <div className="App">
-            <header className="App-header">
-            
+          <header className="App-header">
             <label>
               Input:
-              <textarea value={this.state.data.param} onChange={this.handleChange} />
+              <textarea value={this.state.request.param} onChange={this.handleChange} />
             </label>
-            <button onClick={() => {this.getAdjacencyMatrix()}}>Button</button>
-            <textarea value={this.state.data2}  />
-            <button onClick={() => {this.getAdjacencyList()}}>ButtonList</button>
-             <textarea value={this.state.data4}/>
-
-          </header>
-          <div style={{justifyContent: 'center',
-        alignItems: 'center', flex:1, height:'100%', width:'100%'}} className="node_selected">
-                <div style={{height:'400px'}} id="cy"/>
+            <div style={{float: 'left',
+                            width: '100%',
+                            padding: '10px'}}>
+              <div style={{float: 'left',
+                            width: '50%',
+                            padding: '10px'}}>
+                <textarea value={this.state.matrixTextArea}/>
+                <button onClick={() => {this.getAdjacencyMatrix()}}>Matrix</button>
+              </div>
+              <div style={{float: 'left',
+                            width: '50%',
+                            padding: '10px'}}>
+                <textarea value={this.state.listTextArea}/>
+                <button onClick={() => {this.getAdjacencyList()}}>List</button>
+              </div>
             </div>
+            <Graph
+              ref="graph"
+              id='graph-id' 
+              data={this.state.graphProps}
+              config={this.state.myConfig}>
+            </Graph>
+          </header>
         </div>
     )}
   
