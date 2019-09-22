@@ -81,7 +81,8 @@ export default class App extends Component{
   getAdjacencyMatrix(){
     var req = this.state.request;
     req.param = Number(req.param);
-    Api.getAdjacencyMatrix(req)
+    if(req.param != null && req.param<=100 && req.param>=5){
+      Api.getAdjacencyMatrix(req)
       .then( (response) => {
         this.setGraphParamsForMatrix(response);
         var stringMatrix = ""
@@ -93,12 +94,16 @@ export default class App extends Component{
         }
         this.setState({matrixTextArea:stringMatrix})
       })
+    }else{
+      window.alert("Please give a number between 5 and 100.");
+    }
   }
 
   getAdjacencyList(){
     var req = this.state.request;
     req.param = Number(req.param);
-    Api.getAdjacencyList(req)
+    if(req.param != null && req.param<=100 && req.param>=5){
+      Api.getAdjacencyList(req)
       .then( (response) => {
         this.setGraphParamsForList(response);
         var stringMatrix = ""
@@ -110,6 +115,9 @@ export default class App extends Component{
         }
         this.setState({listTextArea:stringMatrix})
       })
+    }else{
+      window.alert("Please give a number between 5 and 100.");
+    }
   }
 
   render(){
